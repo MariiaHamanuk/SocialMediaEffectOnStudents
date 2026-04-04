@@ -46,9 +46,8 @@ Analysis is done in Python.
 
 ```
 ├── data/                  # Raw and processed datasets
-├── notebooks/             # Jupyter notebooks for exploration
+├── notebooks/             # Jupyter notebooks (EDA, statistical analysis)
 ├── reports/               # Research reports (PDF)
-├── src/                   # Python scripts for analysis
 ├── .gitignore
 └── README.md
 ```
