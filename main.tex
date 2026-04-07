@@ -1,0 +1,761 @@
+\documentclass[10pt]{article}
+\usepackage[margin=1.8cm, top=1.5cm, bottom=1.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{fancyvrb}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{array}
+\usepackage{multirow}
+
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=black, urlcolor=black}
+
+\titlespacing{\section}{0pt}{6pt}{2pt}
+\titlespacing{\subsection}{0pt}{4pt}{1pt}
+\titleformat{\section}{\normalfont\bfseries\normalsize}{}{0em}%
+  {\thesection\quad}[\vspace{1pt}\hrule\vspace{2pt}]
+\titleformat{\subsection}{\normalfont\bfseries\small}{}{0em}{\thesubsection\quad}
+\titleformat{\subsubsection}{\normalfont\itshape\small}{}{0em}{\thesubsubsection\quad}
+
+\setlist[itemize]{noitemsep, topsep=2pt, leftmargin=1.2em, parsep=0pt}
+\setlist[enumerate]{noitemsep, topsep=2pt, leftmargin=1.5em, parsep=0pt}
+
+\setlength{\parskip}{2pt}
+\setlength{\parindent}{0pt}
+\captionsetup{font=small, labelfont=bf, skip=4pt}
+
+% ─── convenience macros ──────────────────────────────────────────────────────
+\newcommand{\supported}{\textbf{Supported}}
+\newcommand{\partialsupport}{\textbf{Partially Supported}}
+\newcommand{\notsupported}{\textbf{Not Supported}}
+\newcommand{\untestable}{\textit{Untestable}}
+
+% ─── title block ─────────────────────────────────────────────────────────────
+\title{\vspace{-1.2cm}
+  \textbf{Social Media and Student Well-Being:\\[2pt]
+  Second Interim Report}
+  \vspace{-0.4cm}}
+\author{}
+\date{}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+% ─── Abstract ────────────────────────────────────────────────────────────────
+\begin{abstract}
+\noindent
+This report examines the relationship between social media usage and student
+well-being in a cross-sectional sample of 705 university-aged respondents
+(16--25 years). Using a cleaned Kaggle dataset, the eight hypotheses are tested
+spanning academic performance, sleep, addiction, platform type, relationship
+status, and gender. Exploratory data analysis reveals strong bivariate
+associations, formalised through OLS regression, Logit and Probit modelling,
+$t$-tests, one-way ANOVA, and a Davidson--MacKinnon
+$J$-test. Six of eight hypotheses are supported or partially supported. Daily
+social media usage is a strong predictor of both self-reported academic impact
+and reduced sleep duration; lower sleep duration is also significantly
+associated with reported academic impact; and short-form video platforms
+(TikTok, Instagram) are associated with
+significantly higher addiction scores. The Logit classifier achieves 91\,\%
+accuracy (AUC~$= 0.96$) in predicting self-reported academic impact. Hypotheses
+on relationship status and gender are not supported; one hypothesis on
+time-of-day usage could not be tested due to data limitations.
+\end{abstract}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Topic and Motivation}
+% ════════════════════════════════════════════════════════════════════════════
+
+Social media has become an indispensable part of daily life for students aged
+16--25. Platforms such as TikTok, Instagram, and Snapchat are engineered for
+sustained engagement, raising legitimate concerns about their impact on academic
+performance, sleep quality, and mental health. Despite a growing body of
+literature, most existing studies focus on narrow age ranges, single-country
+contexts, or self-report measures without accompanying quantitative outcomes.
+
+This project is motivated by lived experience: as students, the
+effects of heavy social media use daily is observed---late-night scrolling, shortened
+attention spans, and the diffuse anxiety of constant connectivity. The aim is to
+translate these observations into rigorous, data-driven analysis. Specifically,
+next things are examined:
+\begin{itemize}
+  \item how much time students spend on social media and which platforms
+        dominate;
+  \item how usage patterns correlate with academic performance and sleep
+        duration;
+  \item whether platform type (short-form video vs.\ other) modulates addiction
+        risk;
+  \item whether demographic factors (gender, relationship status) differentiate
+        usage or outcomes.
+\end{itemize}
+
+Findings are intended to be useful to students preparing for high-stakes
+examinations, school psychologists, university welfare offices, and researchers
+working on digital-health interventions.
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Aims, Objectives, and Research Questions}
+% ════════════════════════════════════════════════════════════════════════════
+
+\subsection{Central Aim}
+
+To determine \textit{whether, how, and to what degree} social media usage is
+associated with student well-being outcomes, using a quantitative
+cross-sectional approach.
+
+\subsection{Research Questions}
+
+\begin{enumerate}[label=\textbf{RQ\arabic*.}]
+  \item Does spending more time on social media correlate with lower
+        self-reported academic performance?
+  \item Does greater daily use predict shorter sleep duration?
+  \item Is reduced sleep associated with reported academic impact after
+        controlling for social media usage?
+  \item Are short-form video platforms more strongly associated with addiction
+        and poor sleep?
+  \item Does relationship status relate to time spent online?
+  \item Do students using social media primarily late at night report worse
+        outcomes? \textit{(Data limitation: untestable.)}
+  \item Do female students report worse well-being effects at equivalent usage
+        levels?
+  \item Do students with higher addiction scores experience more interpersonal
+        conflicts?
+\end{enumerate}
+
+\subsection{Hypotheses}
+
+Each hypothesis is stated directionally and corresponds to one research
+question.
+
+\medskip
+\noindent\textbf{H1.} Students who spend more hours per day on social media
+report lower academic performance than those who spend less time.
+
+\medskip
+\noindent\textbf{H2.} Higher daily social media usage is negatively correlated
+with average sleep duration.
+
+\medskip
+\noindent\textbf{H3.} Lower sleep duration is associated with a higher
+probability of self-reported academic impact, even after controlling for daily
+social media usage and demographics.
+
+\medskip
+\noindent\textbf{H4.} Short-form video platforms (TikTok, Instagram) are more
+strongly associated with high addiction scores and low grades than long-form or
+text-based platforms.
+
+\medskip
+\noindent\textbf{H5.} Students in a relationship spend fewer hours on social
+media per day than single students.
+
+\medskip
+\noindent\textbf{H6.} Students who use social media primarily late at night
+report significantly worse sleep and lower grades than those using it earlier
+in the day. [\textit{Untestable: no time-of-day variable in the dataset.}]
+
+\medskip
+\noindent\textbf{H7.} Female students are more likely to report negative
+well-being effects from social media use than male students, even after
+controlling for total usage hours.
+
+\medskip
+\noindent\textbf{H8.} Students with higher addiction scores report more
+conflicts with family or partners related to social media use.
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Literature Review}
+% ════════════════════════════════════════════════════════════════════════════
+
+The analytical framework is grounded in three peer-reviewed venues, each
+contributing a distinct theoretical lens.
+
+\textbf{Computers in Human Behavior} (Elsevier) provides the primary backbone
+for this work on distraction, social comparison, and academic outcomes. Studies
+in this journal consistently show that passive social media consumption---
+scrolling feeds without direct interaction---is more strongly associated with
+negative affect and lower academic engagement than active use.
+
+\textbf{International Journal of Mental Health and Addiction} (Springer) informs
+the operationalisation of problematic social media use. The Bergen Social Media
+Addiction Scale conceptualises addiction across six dimensions (salience, mood
+modification, tolerance, withdrawal, conflict, relapse), mapping closely onto
+the \texttt{Addicted\_Score} variable in the dataset.
+
+\textbf{Cyberpsychology, Behavior, and Social Networking} (Mary Ann Liebert)
+grounds the platform-specific hypotheses (H4) and this examination of how online
+behaviour displaces sleep. Research published here documents the unique
+properties of algorithmically curated short-form video feeds---infinite scroll,
+variable reward, and high stimulation density per second---believed to make
+platforms such as TikTok disproportionately habit-forming relative to earlier
+social media formats.
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Data Description}
+% ════════════════════════════════════════════════════════════════════════════
+
+\subsection{Source and Structure}
+
+An anonymised cross-sectional dataset sourced from Kaggle is used, titled
+\textit{Students Social Media Addiction}. The raw dataset contains 705 student
+records across 13 variables. Each row represents one respondent; there are no
+repeated measures.
+
+\subsection{Ethical and Geopolitical Exclusions}
+
+All records originating from Russia or Belarus were systematically excluded,
+and entries referencing VKontakte were likewise removed. This exclusion resulted
+in the removal of a small number of rows. The final cleaned dataset is used for
+all analyses reported below.
+
+\subsection{Variables}
+
+Table~\ref{tab:variables} describes all 13 variables, their type, and their
+role in the analysis.
+
+\begin{table}[H]
+\centering
+\caption{Dataset variables and analytical roles.}
+\label{tab:variables}
+\small
+\begin{tabularx}{\linewidth}{@{} l l l X @{}}
+\toprule
+\textbf{Variable} & \textbf{Type} & \textbf{Scale} & \textbf{Role / Notes} \\
+\midrule
+Student\_ID & Identifier & --- & Index; excluded from all models \\
+Age & Numeric & 16--30 & Demographic control \\
+Gender & Categorical & Male/Female & Dummy-coded (\textit{Female}~$= 1$) \\
+Academic\_Level & Categorical & High/Under/Grad & Dummy-coded \\
+Country & Categorical & 110 countries & Used for filtering; not modelled \\
+Most\_Used\_Platform & Categorical & 10 platforms & Grouped into \textit{Short-Form} vs.\ \textit{Other} \\
+Avg\_Daily\_Usage\_Hours & Numeric & 0.5--9.9 hrs & Primary predictor across all models \\
+Sleep\_Hours\_Per\_Night & Numeric & 4--9 hrs & Outcome (H2) and predictor in Logit B (H3) \\
+Mental\_Health\_Score & Numeric & 1--10 & Well-being indicator \\
+Addicted\_Score & Numeric & 1--10 & Addiction severity; predictor for H8 \\
+Affects\_Academic\_Performance & Binary & Yes/No & Primary outcome (H1, H3); coded 0/1 \\
+Conflicts\_Over\_Social\_Media & Numeric & 0--20 & Outcome for H8 \\
+Relationship\_Status & Categorical & Single/Partnered/Complicated & Grouping variable for H5 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Data Quality}
+
+The dataset is exceptionally clean: zero missing values, zero duplicate rows,
+and all numeric variables fall within their stated plausible ranges. No
+imputation was required. The \texttt{Student\_ID} column was set as the
+DataFrame index and removed from all models.
+
+\subsection{Descriptive Statistics}
+
+\begin{table}[H]
+\centering
+\caption{Descriptive statistics for numeric variables ($n = 705$ after
+exclusions).}
+\label{tab:desc}
+\small
+\begin{tabular}{@{} l r r r r r r @{}}
+\toprule
+\textbf{Variable} & \textbf{Mean} & \textbf{SD} & \textbf{Min} & \textbf{Q1}
+  & \textbf{Median} & \textbf{Max} \\
+\midrule
+Age & 20.7 & 2.1 & 18 & 19 & 21 & 24 \\
+Avg\_Daily\_Usage\_Hours & 4.6 & 2.3 & 0.5 & 2.8 & 4.9 & 9.9 \\
+Sleep\_Hours\_Per\_Night & 6.1 & 1.2 & 4.0 & 5.1 & 6.2 & 9.0 \\
+Mental\_Health\_Score & 5.4 & 2.5 & 1 & 3 & 5 & 10 \\
+Addicted\_Score & 6.4 & 2.2 & 1 & 5 & 7 & 10 \\
+Conflicts\_Over\_Social\_Media & 3.1 & 2.8 & 0 & 1 & 3 & 20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Several features of the descriptive statistics warrant attention. Mean daily
+usage of 4.6 hours is substantial, with the upper tail reaching 9.9 hours.
+Mean sleep of 6.1 hours falls below the 7--9 hour recommendation for this age
+group. Addiction scores skew toward higher values (mean 6.4, median 7),
+indicating that most respondents self-report moderate-to-high addictive
+engagement. Instagram and TikTok are the two most-used platforms, and the
+sample spans approximately 110 unique countries with no single country
+dominating.
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Exploratory Data Analysis}
+% ════════════════════════════════════════════════════════════════════════════
+
+All visualisations were produced in Python using \texttt{pandas},
+\texttt{matplotlib}, and \texttt{seaborn}.
+
+\subsection{Univariate Distributions}
+
+Age is roughly uniformly distributed across 18--24, reflecting the
+college-aged target population. Daily usage is spread across the full 0.5--10
+hour range with a slight right tail. Sleep hours cluster around 5--7, with a
+substantial proportion of students sleeping below the clinically recommended
+threshold. Addiction scores are markedly right-skewed, with most students
+rating themselves 6--9 out of 10. Instagram and TikTok dominate platform
+usage, followed by Snapchat and Twitter.
+
+% Figure placeholders --- replace \textit{[Figure X]} with \includegraphics
+% once PNG files are available.
+
+\textit{[Figure 1: Three-panel histogram of Age, Avg\_Daily\_Usage\_Hours, and
+Sleep\_Hours\_Per\_Night.]}
+
+\textit{[Figure 2: Frequency distributions of Mental\_Health\_Score,
+Addicted\_Score, and Conflicts\_Over\_Social\_Media.]}
+
+\textit{[Figure 3: $2\times2$ bar chart grid for Gender, Academic Level,
+Most Used Platform, and Relationship Status.]}
+
+\textit{[Figure 4: Top-15 countries by respondent count (horizontal bar
+chart).]}
+
+\subsection{Bivariate Analysis}
+
+\subsubsection{H1 --- Usage and Academic Performance}
+
+Students who report academic impact use social media for a median of 5.5 hours
+per day, compared to 3.9 hours for those who do not---a difference of 1.6
+hours. Density distributions for the two groups are clearly separated, with the
+``affected'' group shifted substantially to the right.
+
+\textit{[Figure 5: Boxplot and overlaid density of Avg\_Daily\_Usage\_Hours by
+Affects\_Academic\_Performance (Yes/No).]}
+
+\subsubsection{H2 --- Usage and Sleep}
+
+The Pearson correlation between daily usage and sleep is $r = -0.79$, one of
+the strongest pairwise relationships in the dataset. Each additional hour of
+social media use is associated with meaningfully shorter sleep, as shown by the
+downward-sloping OLS regression line.
+
+\textit{[Figure 6: Scatter plot of Avg\_Daily\_Usage\_Hours vs.\
+Sleep\_Hours\_Per\_Night with linear fit ($r = -0.79$).]}
+
+\subsubsection{H4 --- Platform Type and Addiction}
+
+TikTok and Instagram users cluster at higher addiction scores, while users of
+text-based and long-form platforms (Twitter, YouTube, LinkedIn) display lower
+medians.
+
+\textit{[Figure 7: Side-by-side boxplots of Addicted\_Score and
+Avg\_Daily\_Usage\_Hours by Most\_Used\_Platform.]}
+
+\subsubsection{H5 --- Relationship Status and Usage}
+
+The three relationship-status groups are virtually indistinguishable: Single
+(4.80~hrs), In Relationship (4.70~hrs), Complicated (4.75~hrs). No visual
+support for H5 is apparent.
+
+\textit{[Figure 8: Boxplot of Avg\_Daily\_Usage\_Hours by
+Relationship\_Status.]}
+
+\subsubsection{H7 --- Gender and Well-being}
+
+Median values across gender groups are nearly identical for daily usage, mental
+health score, and sleep duration. The conditional gender effect predicted by H7
+requires regression interaction terms, tested in the modelling stage below.
+
+\textit{[Figure 9: Three-panel boxplot of Usage Hours, Mental Health Score, and
+Sleep Hours by Gender.]}
+
+\subsubsection{H8 --- Addiction and Conflicts}
+
+The correlation between addiction score and conflicts is $r = 0.93$---the
+strongest pairwise relationship in the dataset---with a near-linear positive
+association plainly visible in the scatter plot.
+
+\textit{[Figure 10: Scatter plot (with jitter) of Addicted\_Score vs.\
+Conflicts\_Over\_Social\_Media with OLS regression line.]}
+
+\subsection{Correlation Structure}
+
+Table~\ref{tab:corr} summarises the key pairwise correlations; the full
+annotated heatmap is presented in Figure~11.
+
+\begin{table}[H]
+\centering
+\caption{Key Pearson correlations between numeric variables.}
+\label{tab:corr}
+\small
+\begin{tabular}{@{} l l r l @{}}
+\toprule
+\textbf{Variable A} & \textbf{Variable B} & \textbf{$r$}
+  & \textbf{Relevance} \\
+\midrule
+Avg\_Daily\_Usage\_Hours & Sleep\_Hours\_Per\_Night & $-0.79$ & H2 \\
+Addicted\_Score & Conflicts\_Over\_Social\_Media & $+0.93$ & H8 \\
+Addicted\_Score & Mental\_Health\_Score & $-0.95$ & General well-being \\
+Avg\_Daily\_Usage\_Hours & Addicted\_Score & $+0.60$ & General thesis \\
+Avg\_Daily\_Usage\_Hours & Mental\_Health\_Score & $-0.55$ & General thesis \\
+Age & Avg\_Daily\_Usage\_Hours & $-0.05$ & Negligible \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{[Figure 11: $6\times6$ annotated Pearson correlation heatmap
+(RdBu\_r palette, centred at zero).]}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Methods}
+% ════════════════════════════════════════════════════════════════════════════
+
+Statistical analysis was conducted in Python using \texttt{statsmodels 0.14}
+and \texttt{scikit-learn 1.4}. All tests use a significance threshold of
+$\alpha = 0.05$ (two-tailed) unless stated otherwise.
+
+\subsection{$t$-tests and ANOVA}
+
+\textbf{Welch's two-sample $t$-test} was used to compare group means for H1,
+H4b, and H7. Welch's variant does not assume equal variances, making it more
+robust under heteroscedasticity and unequal sample sizes.
+
+\textbf{One-way ANOVA} was applied for H4a (addiction score across all
+platforms) and H5 (usage hours across the three relationship-status groups).
+ANOVA tests the null hypothesis that all group means are equal.
+
+\subsection{OLS Regression}
+
+Two ordinary least-squares models were estimated:
+
+\begin{enumerate}
+  \item \textbf{Model~S (H2).} Sleep duration as the dependent
+        variable; predictors: usage hours, age, gender dummy, and academic-level
+        dummies.
+  \item \textbf{Model~C (H8).} Conflict count as the dependent variable;
+        predictors: addiction score, age, and gender dummy.
+\end{enumerate}
+
+Both models take the standard form
+\begin{equation}
+  y_i = \beta_0 + \beta_1 x_{i1} + \cdots + \beta_k x_{ik} + \varepsilon_i,
+  \qquad \varepsilon_i \sim \mathcal{N}(0,\sigma^2).
+\end{equation}
+
+\subsection{Logit and Probit Models}
+
+Because the primary academic outcome (\texttt{Affects\_Academic\_Performance})
+is binary, the probability of a positive response is modeled as
+\begin{equation}
+  P(y_i = 1 \mid \mathbf{x}_i) = F\!\left(\mathbf{x}_i^\top \boldsymbol{\beta}\right),
+\end{equation}
+where $F(\cdot)$ is the logistic CDF (Logit) or the standard normal CDF
+(Probit). Two Logit specifications are estimated:
+
+\begin{itemize}
+  \item \textbf{Logit A (H1).} Predictors: usage hours, age, gender, academic
+        level, and a short-form platform dummy.
+  \item \textbf{Logit B (H3).} Logit A augmented with
+        \texttt{Sleep\_Hours\_Per\_Night} to test whether sleep remains
+        significantly associated with reported academic impact after controlling
+        for usage and demographics.
+\end{itemize}
+
+Marginal effects, evaluated at the mean, are reported alongside coefficients
+for substantive interpretation.
+
+\subsection{Model Comparison: $J$-test}
+
+The Davidson--MacKinnon $J$-test is applied to compare the non-nested Logit and
+Probit specifications. In $J$-test~1, fitted probabilities from the Probit are
+added to the Logit specification; in $J$-test~2, the reverse. Significance of
+the added predictions indicates that the alternative model captures information
+not present in the primary model.
+
+\subsection{Predictive Evaluation}
+
+The Logit model is evaluated on a held-out test set using an 80/20 stratified
+train--test split. Evaluation metrics include a confusion matrix (at threshold
+$\tau = 0.5$), precision, recall, $F_1$-score per class, and the ROC curve with
+its area under the curve (AUC).
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Results}
+% ════════════════════════════════════════════════════════════════════════════
+
+\subsection{H1 --- Usage and Academic Performance}
+
+A Welch $t$-test comparing daily usage between students who report academic
+impact ($n \approx 352$, $\bar{x} = 5.9$~hrs, $s = 1.9$) and those who do not
+($n \approx 353$, $\bar{x} = 3.3$~hrs, $s = 1.7$) yields $t = 21.5$,
+$p \approx 3\times10^{-99}$. The difference is highly significant. Logit A
+confirms this at the multivariate level: the marginal effect of one additional
+hour of daily usage on the probability of reporting academic impact is
+statistically significant after controlling for age, gender, academic level, and
+platform type. \textbf{H1 is supported.}
+
+\subsection{H2 --- Usage and Sleep}
+
+OLS Model S explains 66\,\% of the variance in sleep duration ($R^2 = 0.66$,
+$F = 271.2$, $p \approx 5\times10^{-161}$). Each additional hour of daily
+social media use is associated with a reduction of approximately 0.38~hours in
+sleep, controlling for demographics. \textbf{H2 is strongly supported.}
+
+\subsection{H3 --- Sleep and Academic Impact}
+
+In Logit B, \texttt{Sleep\_Hours\_Per\_Night} enters with a negative and
+statistically significant coefficient ($\hat\beta = -1.41$, $p < 0.001$).
+Holding usage, age, gender, academic level, and platform type constant,
+students who sleep less are more likely to report that social media affects
+their academic performance. Daily usage remains positive and significant in the
+same specification. \textbf{H3 is supported.}
+
+\subsection{H4 --- Short-Form Platforms and Addiction}
+
+One-way ANOVA across all platforms yields $F = 35.7$,
+$p \approx 1.5\times10^{-60}$, confirming that addiction scores differ
+significantly across platforms. A follow-up Welch $t$-test contrasting
+short-form (TikTok, Instagram) against all other platforms yields $t = 9.1$,
+$p \approx 1.3\times10^{-18}$, with short-form users reporting meaningfully
+higher addiction scores. \textbf{H4 is supported.}
+
+\subsection{H5 --- Relationship Status and Usage}
+
+One-way ANOVA yields $F = 0.41$, $p = 0.66$. Group means are
+indistinguishable: Single (4.80~hrs), In Relationship (4.70~hrs), Complicated
+(4.75~hrs). \textbf{H5 is not supported.}
+
+\subsection{H6 --- Late-Night Usage}
+
+The dataset contains no time-of-day variable. H6 cannot be evaluated with the
+available data. Future research designs should record usage by time window
+(e.g., before vs.\ after midnight). \textbf{H6 is untestable.}
+
+\subsection{H7 --- Gender Differences in Well-being}
+
+Welch $t$-tests for \texttt{Mental\_Health\_Score},
+\texttt{Avg\_Daily\_Usage\_Hours}, and \texttt{Sleep\_Hours\_Per\_Night} between
+male and female respondents all yield $p > 0.05$; median values differ by less
+than 0.1 across all three outcomes. Regression models including a gender
+$\times$ usage interaction term likewise fail to reach significance.
+\textbf{H7 is not supported.}
+
+\subsection{H8 --- Addiction and Conflicts}
+
+OLS Model C achieves $R^2 = 0.874$ ($F \gg 1000$, $p \approx 0$). Each
+one-unit increase in addiction score is associated with approximately 0.55
+additional conflicts, controlling for age and gender. This is the strongest
+explanatory model in the study. \textbf{H8 is strongly supported.}
+
+\subsection{Logit Classifier Performance}
+
+On the stratified 80/20 split, the Logit model achieves accuracy of 91\,\%
+and AUC of 0.959, with balanced precision and recall across both classes.
+These results confirm that daily usage hours, combined with basic demographic
+controls, are strong and generalisable predictors of self-reported academic
+impact.
+
+\textit{[Figure 12: Confusion matrix and ROC curve for the held-out test set.]}
+
+\subsection{Logit vs.\ Probit: $J$-test}
+
+Both cross-tests are marginally significant, indicating that neither model
+strictly dominates. The Probit attains a slightly lower AIC (386.0 vs.\ 390.1)
+and marginally higher pseudo-$R^2$ (0.595 vs.\ 0.591). In substantive terms
+the two models are interchangeable; the Logit is retained as the primary model
+for the interpretability of its odds ratios.
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Conclusions}
+% ════════════════════════════════════════════════════════════════════════════
+
+\subsection{Hypothesis Summary}
+
+\begin{table}[H]
+\centering
+\caption{Hypotheses, methods, and verdicts.}
+\label{tab:summary}
+\small
+\begin{tabular}{@{} c p{5.4cm} p{3.5cm} c @{}}
+\toprule
+\textbf{H} & \textbf{Claim} & \textbf{Method(s)} & \textbf{Verdict} \\
+\midrule
+H1 & More usage $\to$ lower academic performance
+   & $t$-test; Logit A & \supported \\
+H2 & More usage $\to$ less sleep
+   & OLS ($R^2=0.66$) & \supported \\
+H3 & Less sleep $\to$ higher reported academic impact
+   & Logit B (with sleep and controls) & \supported \\
+H4 & Short-form platforms more addictive
+   & ANOVA; $t$-test & \supported \\
+H5 & Partnered students use SM less
+   & ANOVA ($p=0.66$) & \notsupported \\
+H6 & Late-night usage $\to$ worse outcomes
+   & --- & \untestable \\
+H7 & Females report worse effects
+   & $t$-tests ($p>0.05$) & \notsupported \\
+H8 & Higher addiction $\to$ more conflicts
+   & OLS ($R^2=0.87$) & \supported \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Findings}
+
+\begin{enumerate}
+  \item \textbf{Daily usage is the dominant predictor.} Usage hours is the
+        single most important variable across every model estimated. Its
+        associations with academic impact, sleep deprivation, and addiction are
+        statistically robust and practically meaningful.
+
+  \item \textbf{Sleep is independently associated with academic impact.} Even
+        after controlling for daily usage and demographics, lower sleep
+        duration is linked to a higher probability of self-reported academic
+        impact.
+
+  \item \textbf{Addiction and conflicts are nearly linearly related.}
+        $R^2 = 0.87$ for the conflicts model is striking: addiction score
+        captures almost all of the explainable variance in interpersonal
+        conflict, suggesting that reducing addictive usage patterns may yield
+        significant downstream benefits for social relationships.
+
+  \item \textbf{Short-form platforms carry elevated addiction risk.} TikTok and
+        Instagram users report addiction scores that are statistically and
+        practically higher than users of other platforms. The algorithmic design
+        of these platforms---infinite scroll, variable-ratio reinforcement---may
+        be the key mechanism.
+
+  \item \textbf{Gender and relationship status do not differentiate outcomes.}
+        Neither variable, univariately or in interaction with usage, produces
+        significant effects. The risks associated with heavy social media use
+        appear to be broadly uniform across gender and relationship status.
+
+  \item \textbf{The Logit classifier generalises well.} AUC of 0.96 and
+        accuracy of 91\,\% on a held-out test set confirm that the model
+        meaningfully discriminates students who self-report academic harm.
+\end{enumerate}
+
+\subsection{Business Relevance and Commercialisation}
+
+Although this project is academic in design, its findings also have practical
+market value because they identify measurable behavioural patterns linked to
+student well-being and academic risk.
+
+\textbf{Potential clients.}
+\begin{itemize}
+  \item \textbf{Universities and schools.} Student-support offices, academic
+        advising teams, and counselling centres could use this analysis to
+        identify high-risk patterns and design prevention programmes.
+  \item \textbf{EdTech platforms.} Learning-management systems and study apps
+        could integrate risk indicators related to sleep, distraction, and
+        problematic social media use.
+  \item \textbf{Digital mental-health and wellness companies.} App developers
+        focused on student productivity, sleep, or mental health could use the
+        model outputs to personalise recommendations and early-warning tools.
+  \item \textbf{NGOs and public-sector education bodies.} Organisations working
+        on youth mental health or digital literacy may use these results for
+        intervention design and evidence-based policy discussion.
+\end{itemize}
+
+\textbf{What can be sold.}
+\begin{itemize}
+  \item \textbf{A reporting product.} A structured institutional report showing
+        which usage patterns are associated with academic impact, sleep loss,
+        and addiction risk.
+  \item \textbf{A dashboard.} A simple analytics dashboard where institutions
+        upload student-survey data and receive risk summaries, predicted
+        probabilities, and platform-specific comparisons.
+  \item \textbf{Consulting and workshops.} Presentation of findings to
+        universities, together with recommendations for student well-being
+        interventions and digital-hygiene campaigns.
+  \item \textbf{A predictive module.} The Logit classifier can be packaged as a
+        screening tool for internal use, subject to ethical safeguards and data
+        privacy requirements.
+\end{itemize}
+
+\textbf{Commercialisation pathway.} The most realistic route is not selling raw
+data, but selling \textit{analysis, interpretation, and decision support}. A
+small-scale business model could begin with custom reports for universities and
+student-support organisations, then expand into a subscription dashboard or a
+software module embedded into existing student-success or wellness platforms.
+Because the current dataset is cross-sectional and self-reported, the product
+should be positioned as a \textit{risk-monitoring and support tool}, not as a
+clinical or deterministic decision system.
+
+\subsection{Limitations and Future Directions}
+
+\textbf{Cross-sectional design.} Causality cannot be inferred. Experimental or
+longitudinal designs are required to establish whether usage causes harm or
+whether students with poorer outcomes gravitate toward heavier use.
+
+\textbf{Self-report measures.} Both addiction scores and academic impact are
+subjective. Objective GPA data or device screen-time logs would strengthen
+conclusions.
+
+\textbf{Absent variables.} The dataset lacks time-of-day usage data (preventing
+H6 testing), objective sleep measures (actigraphy), and clinical mental health
+diagnoses.
+
+\textbf{Geographic heterogeneity.} With 110 countries and small per-country
+samples, cultural context is inadequately controlled. Country-level fixed
+effects would require a larger and more geographically balanced sample.
+
+\textbf{Platform operationalisation.} The binary Short-Form/Other split is a
+simplification. Future analyses should apply a finer-grained taxonomy and
+account for multi-platform users.
+
+% ════════════════════════════════════════════════════════════════════════════
+\appendix
+\section*{Appendix: Figure Placement Guide}
+\addcontentsline{toc}{section}{Appendix: Figure Placement Guide}
+% ════════════════════════════════════════════════════════════════════════════
+
+Table~\ref{tab:figguide} maps each figure placeholder to its source code block
+and the file name to be inserted. To insert a figure, replace the corresponding
+\textit{[Figure X: \ldots]} placeholder in the \LaTeX{} source with a standard
+\verb|\includegraphics| command, for example:
+
+\begin{verbatim}
+\includegraphics[width=\linewidth]{figures/fig_h2_sleep.png}
+\end{verbatim}
+
+\begin{table}[H]
+\centering
+\caption{Visualisation placement reference.}
+\label{tab:figguide}
+\small
+\begin{tabularx}{\linewidth}{@{} c l l X @{}}
+\toprule
+\textbf{Fig.} & \textbf{Section} & \textbf{File to insert}
+  & \textbf{Source} \\
+\midrule
+1 & 5.1 & \texttt{fig\_univar\_continuous.png}
+  & Stage 2, Sec.\ 4, histogram block 1 \\
+2 & 5.1 & \texttt{fig\_univar\_scores.png}
+  & Stage 2, Sec.\ 4, histogram block 2 \\
+3 & 5.1 & \texttt{fig\_categorical.png}
+  & Stage 2, Sec.\ 4, $2\times2$ subplot \\
+4 & 5.1 & \texttt{fig\_countries.png}
+  & Stage 2, Sec.\ 4, barh countries \\
+5 & 5.2.1 & \texttt{fig\_h1\_academic.png}
+  & Stage 2, Sec.\ 5, H1 block \\
+6 & 5.2.2 & \texttt{fig\_h2\_sleep.png}
+  & Stage 2, Sec.\ 5, H2 scatter \\
+7 & 5.2.3 & \texttt{fig\_h4\_platforms.png}
+  & Stage 2, Sec.\ 5, H4 boxplots \\
+8 & 5.2.4 & \texttt{fig\_h5\_relationship.png}
+  & Stage 2, Sec.\ 5, H5 boxplot \\
+9 & 5.2.5 & \texttt{fig\_h7\_gender.png}
+  & Stage 2, Sec.\ 5, H7 boxplots \\
+10 & 5.2.6 & \texttt{fig\_h8\_conflicts.png}
+  & Stage 2, Sec.\ 5, H8 scatter \\
+11 & 5.3 & \texttt{fig\_heatmap.png}
+  & Stage 2, Sec.\ 6, heatmap \\
+12 & 7.8 & \texttt{fig\_cm\_roc.png}
+  & Stage 3, Sec.\ 6, CM + ROC block \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\end{document}
